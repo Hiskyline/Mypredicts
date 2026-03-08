@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="UTF-8">
+
 <title>Monarch AI Dashboard</title>
 
 <style>
+
 body{
 background:#0d1117;
 color:#00ffa6;
@@ -12,18 +14,43 @@ font-family:monospace;
 padding:40px;
 }
 
+h1{
+letter-spacing:3px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(5,60px);
+gap:8px;
+margin-top:20px;
+}
+
+.tile{
+width:60px;
+height:60px;
+background:#161b22;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:8px;
+border:1px solid #30363d;
+}
+
+.safe{
+background:#00ffa6;
+color:black;
+font-weight:bold;
+}
+
 .card{
 background:#161b22;
 padding:20px;
+margin-top:20px;
 border-radius:10px;
-margin-bottom:20px;
-}
-
-h1{
-letter-spacing:2px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -31,30 +58,76 @@ letter-spacing:2px;
 <h1>MONARCH AI CONTROL PANEL</h1>
 
 <div class="card">
-Games analyzed: <span id="games">0</span>
+
+AI STATUS: <span id="status">ONLINE</span><br><br>
+
+Games analyzed: <span id="games">0</span><br><br>
+
+Predicted tiles: <span id="prediction">loading...</span>
+
 </div>
 
 <div class="card">
-Prediction tiles:
-<div id="tiles"></div>
+
+AI BOARD PREDICTION
+
+<div class="grid" id="grid"></div>
+
 </div>
 
 <script>
 
-async function update(){
+const GRID_SIZE = 25
 
-let r = await fetch("/api/ext/predictions?mode=AI_Mode&count=5");
-let d = await r.json();
+const grid = document.getElementById("grid")
 
-document.getElementById("games").innerText = d[0].games_analyzed;
-document.getElementById("tiles").innerText = d[0].tile_array.join(", ");
+for(let i=0;i<GRID_SIZE;i++){
+
+let tile=document.createElement("div")
+tile.className="tile"
+tile.innerText=i
+tile.id="tile"+i
+grid.appendChild(tile)
 
 }
 
-setInterval(update,2000);
-update();
+async function update(){
+
+try{
+
+let r=await fetch("/api/ext/predictions?mode=AI_Mode&count=5")
+
+let d=await r.json()
+
+let tiles=d[0].tile_array
+
+document.getElementById("games").innerText=d[0].games_analyzed
+document.getElementById("prediction").innerText=tiles.join(",")
+
+document.querySelectorAll(".tile").forEach(t=>t.classList.remove("safe"))
+
+tiles.forEach(i=>{
+
+let t=document.getElementById("tile"+i)
+
+if(t) t.classList.add("safe")
+
+})
+
+}catch(e){
+
+document.getElementById("status").innerText="OFFLINE"
+
+}
+
+}
+
+setInterval(update,2000)
+
+update()
 
 </script>
 
 </body>
+
 </html>
