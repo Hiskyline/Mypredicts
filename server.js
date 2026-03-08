@@ -1,53 +1,52 @@
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const path = require("path");
+const express = require("express")
+const cors = require("cors")
+const bodyParser = require("body-parser")
+const path = require("path")
 
-const { getPrediction, learnGame, stats } = require("./ai/engine");
+const { getPrediction, learnGame, stats } = require("./ai/engine")
 
-const app = express();
+const app = express()
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(cors())
+app.use(bodyParser.json())
+app.use(express.static("public"))
 
-// Extension fetches predictions
-app.get("/api/ext/predictions", (req, res) => {
-  const mode = req.query.mode || "AI_Mode";
-  const count = parseInt(req.query.count || 5);
+app.get("/", (req,res)=>{
+  res.sendFile(path.join(__dirname,"public","dashboard.html"))
+})
 
-  const tiles = getPrediction(mode, count);
+app.get("/api/ext/predictions",(req,res)=>{
 
-  res.json([{
-    tile_array: tiles,
-    games_analyzed: stats.totalGames
-  }]);
-});
+  const mode = req.query.mode || "AI_Mode"
+  const count = parseInt(req.query.count || 5)
 
-// Extension sends finished game
-app.post("/api/ext/game-result", (req, res) => {
-  const { mines, mode, time } = req.body;
+  const tiles = getPrediction(mode,count)
 
-  if(!mines){
-    return res.status(400).json({error:"Missing mines"});
-  }
+  res.json([
+    {
+      tile_array: tiles,
+      games_analyzed: stats.totalGames
+    }
+  ])
+
+})
+
+app.post("/api/ext/game-result",(req,res)=>{
+
+  const { mines, mode, time } = req.body
 
   learnGame({
     mines,
-    mode: mode || "AI_Mode",
-    time: time || Date.now()
-  });
+    mode,
+    time
+  })
 
-  res.json({status:"learned"});
-});
+  res.json({status:"learned"})
 
-// Simple health check
-app.get("/api/health",(req,res)=>{
-  res.json({status:"online", games:stats.totalGames});
-});
+})
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => {
-  console.log("Monarch AI Server running on port " + PORT);
-});
+app.listen(PORT,()=>{
+  console.log("Monarch AI server running")
+})
